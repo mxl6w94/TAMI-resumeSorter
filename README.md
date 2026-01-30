@@ -2,14 +2,14 @@
 
 TAMI is an intelligent, scalable, and cost-optimized resume screening platform. It parses resumes, preserves original documents, and uses semantic search to grade applicants against custom criteria with evidence-based highlighting.
 
-## 🚀 Key Features
+##  Key Features
 
 * **Source Preservation:** Securely stores original PDF/DOCX files for human review.
 * **Evidence Highlighting:** Don't just trust the score. TAMI highlights the exact passage in the resume that generated the rating.
 * **Token-Optimized Analysis:** Uses Vector Embeddings (RAG) to search for relevant skills before asking the LLM, reducing AI costs by up to 60%.
 * **Scalable Architecture:** Built on Next.js and Supabase (Postgres) to handle thousands of applicants without browser crashes.
 
-## 🛠 Tech Stack
+##  Tech Stack
 
 * **Frontend:** Next.js (React), Tailwind CSS, Framer Motion
 * **Backend:** Next.js API Routes (Serverless Functions)
@@ -20,7 +20,7 @@ TAMI is an intelligent, scalable, and cost-optimized resume screening platform. 
     * **Generation:** Google Gemini Flash or GPT-4o-mini (for scoring)
     * **Parsing:** LangChain JS + PDF.js
 
-## 🏗 Architecture Overview
+##  Architecture Overview
 
 1.  **Ingestion:** User uploads a resume.
 2.  **Parsing:** Server extracts text and splits it into "chunks" (paragraphs).
