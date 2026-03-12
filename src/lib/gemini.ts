@@ -2,11 +2,12 @@ import { GoogleGenerativeAI } from '@google/generative-ai'
 import { env } from './env'
 import type { ScorerResult } from '@/types/database'
 
-const genAI = new GoogleGenerativeAI(env.GEMINI_API_KEY)
-const model = genAI.getGenerativeModel({
-  model: 'gemini-1.5-flash',
-  generationConfig: { responseMimeType: 'application/json' },
-})
+function getModel() {
+  return new GoogleGenerativeAI(env.GEMINI_API_KEY).getGenerativeModel({
+    model: 'gemini-1.5-flash',
+    generationConfig: { responseMimeType: 'application/json' },
+  })
+}
 
 export async function scoreWithGemini(
   criteriaName: string,
@@ -30,7 +31,7 @@ Respond with a JSON object matching this schema exactly:
   "exact_quote": "<verbatim text from the resume supporting the score, or null if none>"
 }
 `
-  const result = await model.generateContent(prompt)
+  const result = await getModel().generateContent(prompt)
   const raw = result.response.text()
   return JSON.parse(raw) as ScorerResult
 }
