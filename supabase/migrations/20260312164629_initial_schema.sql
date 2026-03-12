@@ -1,11 +1,10 @@
 -- TAMI v2 — Initial Schema Migration
 -- Enable required extensions
-create extension if not exists "uuid-ossp";
 create extension if not exists "vector";
 
 -- ─── resumes ──────────────────────────────────────────────────────────────────
 create table public.resumes (
-  id                uuid primary key default uuid_generate_v4(),
+  id                uuid primary key default gen_random_uuid(),
   file_hash         text not null unique,       -- sha256; deduplication key
   file_name         text not null,
   file_url          text not null,
@@ -18,7 +17,7 @@ create table public.resumes (
 
 -- ─── folders ──────────────────────────────────────────────────────────────────
 create table public.folders (
-  id          uuid primary key default uuid_generate_v4(),
+  id          uuid primary key default gen_random_uuid(),
   name        text not null,
   description text,
   owner_id    uuid not null references auth.users(id) on delete cascade,
@@ -38,7 +37,7 @@ create table public.folder_resumes (
 create type public.evaluation_type as enum ('keyword_match', 'semantic_match', 'manual');
 
 create table public.criteria_units (
-  id               uuid primary key default uuid_generate_v4(),
+  id               uuid primary key default gen_random_uuid(),
   folder_id        uuid not null references public.folders(id) on delete cascade,
   name             text not null,
   description      text,
@@ -77,7 +76,7 @@ create constraint trigger criteria_weight_sum_check
 create type public.analysis_status as enum ('pending', 'processing', 'completed', 'failed');
 
 create table public.evaluations (
-  id                uuid primary key default uuid_generate_v4(),
+  id                uuid primary key default gen_random_uuid(),
   folder_id         uuid not null references public.folders(id) on delete cascade,
   resume_id         uuid not null references public.resumes(id) on delete cascade,
   criteria_unit_id  uuid not null references public.criteria_units(id) on delete cascade,
@@ -93,7 +92,7 @@ create table public.evaluations (
 
 -- ─── resume_chunks (pgvector RAG) ─────────────────────────────────────────────
 create table public.resume_chunks (
-  id           uuid primary key default uuid_generate_v4(),
+  id           uuid primary key default gen_random_uuid(),
   resume_id    uuid not null references public.resumes(id) on delete cascade,
   chunk_index  integer not null,
   chunk_text   text not null,
