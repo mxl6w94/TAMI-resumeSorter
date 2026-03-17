@@ -19,7 +19,7 @@ export async function runInferenceScorer(
   input: InferenceScorerInput
 ): Promise<void> {
   const { folder_id, resume_id, criterion, chunks } = input
-  const supabase = createSupabaseServerClient()
+  const supabase = await createSupabaseServerClient()
 
   const result = await scoreWithGemini(
     criterion.name,

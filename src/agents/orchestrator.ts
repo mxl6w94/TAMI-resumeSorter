@@ -17,7 +17,7 @@ export function validateCriteriaWeights(weights: number[]): boolean {
 export async function getCriteriaForFolder(
   folderId: string
 ): Promise<CriteriaUnit[]> {
-  const supabase = createSupabaseServerClient()
+  const supabase = await createSupabaseServerClient()
   const { data, error } = await supabase
     .from('criteria_units')
     .select('*')
@@ -30,7 +30,7 @@ export async function getCriteriaForFolder(
 
 export async function runAnalysis(request: AnalysisRequest): Promise<void> {
   const { folder_id, resume_ids } = request
-  const supabase = createSupabaseServerClient()
+  const supabase = await createSupabaseServerClient()
 
   // 1. Load and validate criteria
   const criteria = await getCriteriaForFolder(folder_id)

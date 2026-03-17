@@ -80,7 +80,7 @@ export async function embedAndStoreChunks(
   resumeId: string,
   chunks: string[]
 ): Promise<void> {
-  const supabase = createSupabaseServerClient()
+  const supabase = await createSupabaseServerClient()
 
   const rows = await Promise.all(
     chunks.map(async (chunk, index) => ({
@@ -104,7 +104,7 @@ export async function retrieveSimilarChunks(
   resumeId: string,
   queryEmbedding: number[]
 ): Promise<{ chunk_text: string; similarity: number }[]> {
-  const supabase = createSupabaseServerClient()
+  const supabase = await createSupabaseServerClient()
 
   const { data, error } = await supabase.rpc('match_resume_chunks', {
     query_embedding: queryEmbedding,
@@ -121,7 +121,7 @@ export async function retrieveSimilarChunks(
 
 export async function runRAGAnalyst(input: RAGAnalystInput): Promise<void> {
   const { folder_id, resume_id, criterion } = input
-  const supabase = createSupabaseServerClient()
+  const supabase = await createSupabaseServerClient()
 
   // Mark evaluation as processing
   await supabase

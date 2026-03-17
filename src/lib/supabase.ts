@@ -1,31 +1,5 @@
-import { createServerClient } from '@supabase/ssr'
-import { createBrowserClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
-import { env } from './env'
+// Server-only client (uses next/headers — do NOT import in 'use client' files)
+export { createSupabaseServerClient } from './supabase-server'
 
-export function createSupabaseServerClient() {
-  const cookieStore = cookies()
-  return createServerClient(
-    env.NEXT_PUBLIC_SUPABASE_URL,
-    env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll()
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            cookieStore.set(name, value, options)
-          })
-        },
-      },
-    }
-  )
-}
-
-export function createSupabaseBrowserClient() {
-  return createBrowserClient(
-    env.NEXT_PUBLIC_SUPABASE_URL,
-    env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  )
-}
+// Browser client (safe to use in client components)
+export { createSupabaseBrowserClient } from './supabase-browser'

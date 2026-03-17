@@ -10,7 +10,7 @@ export default async function FolderPage({
 }: {
   params: Promise<{ id: string }>
 }) {
-  const supabase = createSupabaseServerClient()
+  const supabase = await createSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
