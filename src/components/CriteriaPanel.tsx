@@ -23,6 +23,14 @@ export default function CriteriaPanel({
   const [error, setError] = useState<string | null>(null)
 
   const remaining = 100 - weightTotal
+  const [deleting, setDeleting] = useState<string | null>(null)
+
+  async function handleDelete(id: string) {
+    setDeleting(id)
+    await fetch(`/api/criteria/${id}`, { method: 'DELETE' })
+    setDeleting(null)
+    router.refresh()
+  }
 
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault()
@@ -85,6 +93,14 @@ export default function CriteriaPanel({
               {c.is_ai_powered && (
                 <span className="text-xs bg-blue-100 text-blue-700 rounded px-1.5 py-0.5">AI</span>
               )}
+              <button
+                onClick={() => handleDelete(c.id)}
+                disabled={deleting === c.id}
+                className="text-gray-300 hover:text-red-500 transition-colors disabled:opacity-50 ml-1"
+                aria-label="Delete criterion"
+              >
+                {deleting === c.id ? '…' : '×'}
+              </button>
             </li>
           ))}
         </ul>

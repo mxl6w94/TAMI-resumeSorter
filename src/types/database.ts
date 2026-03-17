@@ -75,7 +75,8 @@ export interface CriteriaUnit {
  */
 export interface Evaluation {
   id: string                    // uuid, PK
-  folder_resume_id: string      // composite FK → folder_resumes
+  folder_id: string             // uuid FK → folders.id
+  resume_id: string             // uuid FK → resumes.id
   criteria_unit_id: string      // uuid FK → criteria_units.id
   score: number                 // 0-100 weighted contribution
   justification: string | null  // LLM explanation
