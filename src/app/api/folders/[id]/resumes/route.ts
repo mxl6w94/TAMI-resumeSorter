@@ -77,7 +77,8 @@ export async function POST(
     }
 
     // Upload to Supabase Storage
-    const storagePath = `resumes/${user.id}/${fileHash}/${file.name}`
+    // Path is relative to bucket root — user.id is [1] for RLS foldername check
+    const storagePath = `${user.id}/${fileHash}/${file.name}`
     const { error: uploadError } = await supabase.storage
       .from('resumes')
       .upload(storagePath, buffer, { contentType: file.type, upsert: false })
