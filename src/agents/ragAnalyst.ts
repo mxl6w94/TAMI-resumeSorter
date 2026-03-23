@@ -37,7 +37,8 @@ export async function extractTextFromBuffer(
   mimeType: string
 ): Promise<ParsedResume> {
   if (mimeType === 'application/pdf') {
-    const pdfParse = (await import('pdf-parse')).default
+    const pdfModule = await import('pdf-parse')
+    const pdfParse = pdfModule.default ?? pdfModule
     const result = await pdfParse(buffer)
     if (result.numpages > MAX_FILE_PAGES) {
       throw new Error(`PDF exceeds ${MAX_FILE_PAGES} page limit.`)
