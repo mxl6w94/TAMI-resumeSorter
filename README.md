@@ -1,69 +1,36 @@
-# TAMI - Resume Sorter (Technical Applicant Match Intelligence)
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-TAMI is an intelligent, scalable, and cost-optimized resume screening platform. It parses resumes, preserves original documents, and uses semantic search to grade applicants against custom criteria with evidence-based highlighting.
+## Getting Started
 
-##  Key Features
+First, run the development server:
 
-* **Source Preservation:** Securely stores original PDF/DOCX files for human review.
-* **Evidence Highlighting:** Don't just trust the score. TAMI highlights the exact passage in the resume that generated the rating.
-* **Token-Optimized Analysis:** Uses Vector Embeddings (RAG) to search for relevant skills before asking the LLM, reducing AI costs by up to 60%.
-* **Scalable Architecture:** Built on Next.js and Supabase (Postgres) to handle thousands of applicants without browser crashes.
+```bash
+npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+# or
+bun dev
+```
 
-##  Tech Stack
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-* **Frontend:** Next.js (React), Tailwind CSS, Framer Motion
-* **Backend:** Next.js API Routes (Serverless Functions)
-* **Database & Vector Search:** Supabase (PostgreSQL + pgvector extension)
-* **Storage:** Supabase Storage (S3 wrapper)
-* **AI Processing:**
-    * **Embeddings:** OpenAI `text-embedding-3-small` (for search)
-    * **Generation:** Google Gemini Flash or GPT-4o-mini (for scoring)
-    * **Parsing:** LangChain JS + PDF.js
+You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
-##  Architecture Overview
+This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
-1.  **Ingestion:** User uploads a resume.
-2.  **Parsing:** Server extracts text and splits it into "chunks" (paragraphs).
-3.  **Embedding:** Text chunks are converted into mathematical vectors and stored in Postgres.
-4.  **Evaluation:**
-    * When evaluating "Leadership":
-    * We perform a *Semantic Search* for chunks related to "management," "leading," "team."
-    * We send *only* those specific chunks to the LLM.
-5.  **Result:** The LLM returns a score (e.g., 8/10) and the specific quote used for evidence.
+## Learn More
 
-## 📦 Getting Started
+To learn more about Next.js, take a look at the following resources:
 
-### Prerequisites
-* Node.js 18+
-* A Supabase Account (Free Tier works)
-* Google Gemini or OpenAI API Key
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
 
-### Installation
+You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-1.  **Clone the repo**
-    ```bash
-    git clone [https://github.com/mxl6w94/TAMI-resumeSorter.git](https://github.com/mxl6w94/TAMI-resumeSorter.git)
-    cd TAMI-resumeSorter
-    ```
+## Deploy on Vercel
 
-2.  **Install dependencies**
-    ```bash
-    npm install
-    ```
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
-3.  **Environment Setup**
-    Create a `.env.local` file:
-    ```env
-    NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-    NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_key
-    GEMINI_API_KEY=your_gemini_key
-    ```
-
-4.  **Run the development server**
-    ```bash
-    npm run dev
-    ```
-
-## 🗺 Roadmap
-
-See [ROADMAP.md](ROADMAP.md) for the detailed development plan.
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
