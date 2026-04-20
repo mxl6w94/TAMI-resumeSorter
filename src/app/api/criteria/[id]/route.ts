@@ -21,7 +21,7 @@ export async function DELETE(
     .eq('id', criteriaId)
     .single()
 
-  const folder = criterion?.folders as { owner_id: string } | null
+  const folder = criterion?.folders as unknown as { owner_id: string } | null
   if (!criterion || folder?.owner_id !== user.id) {
     return NextResponse.json({ error: 'Criterion not found' }, { status: 404 })
   }

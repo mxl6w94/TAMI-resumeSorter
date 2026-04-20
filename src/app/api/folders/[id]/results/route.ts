@@ -46,7 +46,7 @@ export async function GET(
   }>()
 
   for (const ev of evaluations ?? []) {
-    const resume = ev.resumes as { id: string; file_name: string; file_url: string }
+    const resume = ev.resumes as unknown as { id: string; file_name: string; file_url: string }
     if (!resumeMap.has(resume.id)) {
       resumeMap.set(resume.id, { resume, totalScore: 0, evaluations: [] })
     }

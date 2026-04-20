@@ -4,6 +4,14 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { CriteriaUnit } from '@/types/database'
 
+interface ClarificationQuestion { id: string; question: string }
+
+type RefineState =
+  | { step: 'idle' }
+  | { step: 'questions'; questions: ClarificationQuestion[]; answers: Record<string, string> }
+  | { step: 'loading' }
+  | { step: 'done'; prompt: string }
+
 export default function CriteriaPanel({
   folderId,
   criteria,
@@ -24,12 +32,52 @@ export default function CriteriaPanel({
 
   const remaining = 100 - weightTotal
   const [deleting, setDeleting] = useState<string | null>(null)
+  const [refineId, setRefineId] = useState<string | null>(null)
+  const [refineState, setRefineState] = useState<RefineState>({ step: 'idle' })
 
   async function handleDelete(id: string) {
     setDeleting(id)
     await fetch(`/api/criteria/${id}`, { method: 'DELETE' })
     setDeleting(null)
     router.refresh()
+  }
+
+  async function startRefine(criterion: CriteriaUnit) {
+    setRefineId(criterion.id)
+    setRefineState({ step: 'loading' })
+    const res = await fetch(`/api/criteria/${criterion.id}/refine`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ rawDescription: criterion.description ?? criterion.name }),
+    })
+    const data = await res.json()
+    if (!res.ok) {
+      setRefineState({ step: 'idle' })
+      return
+    }
+    if (data.questions) {
+      setRefineState({ step: 'questions', questions: data.questions, answers: {} })
+    } else if (data.refinedPrompt) {
+      setRefineState({ step: 'done', prompt: data.refinedPrompt })
+    }
+  }
+
+  async function submitAnswers(criterionId: string, questions: ClarificationQuestion[], answers: Record<string, string>) {
+    setRefineState({ step: 'loading' })
+    const criterion = criteria.find((c) => c.id === criterionId)
+    const res = await fetch(`/api/criteria/${criterionId}/refine`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        rawDescription: criterion?.description ?? criterion?.name ?? '',
+        answers,
+      }),
+    })
+    const data = await res.json()
+    if (data.refinedPrompt) {
+      setRefineState({ step: 'done', prompt: data.refinedPrompt })
+      router.refresh()
+    }
   }
 
   async function handleAdd(e: React.FormEvent) {
@@ -85,6 +133,7 @@ export default function CriteriaPanel({
       {criteria.length === 0 ? (
         <p className="text-sm text-gray-400">No criteria yet. Add criteria that sum to 100%.</p>
       ) : (
+        <>
         <ul className="space-y-2">
           {criteria.map((c) => (
             <li key={c.id} className="flex items-center gap-3 bg-gray-50 rounded-lg px-3 py-2 text-sm">
@@ -92,6 +141,15 @@ export default function CriteriaPanel({
               <span className="text-gray-400 shrink-0">{c.weight}%</span>
               {c.is_ai_powered && (
                 <span className="text-xs bg-blue-100 text-blue-700 rounded px-1.5 py-0.5">AI</span>
+              )}
+              {c.is_ai_powered && (
+                <button
+                  onClick={() => startRefine(c)}
+                  className="text-xs text-blue-500 hover:underline shrink-0"
+                  title="Refine evaluation prompt with AI"
+                >
+                  Refine
+                </button>
               )}
               <button
                 onClick={() => handleDelete(c.id)}
@@ -104,6 +162,67 @@ export default function CriteriaPanel({
             </li>
           ))}
         </ul>
+
+        {/* Prompt Refiner modal */}
+        {refineId && refineState.step !== 'idle' && (
+          <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6 space-y-4">
+              <h3 className="text-lg font-semibold text-gray-900">Refine Evaluation Prompt</h3>
+
+              {refineState.step === 'loading' && (
+                <p className="text-sm text-gray-500">Working…</p>
+              )}
+
+              {refineState.step === 'questions' && (
+                <>
+                  <p className="text-sm text-gray-600">Answer these questions to sharpen the AI prompt:</p>
+                  <div className="space-y-3">
+                    {refineState.questions.map((q) => (
+                      <div key={q.id}>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">{q.question}</label>
+                        <input
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          value={refineState.answers[q.id] ?? ''}
+                          onChange={(e) => setRefineState({
+                            ...refineState,
+                            answers: { ...refineState.answers, [q.id]: e.target.value },
+                          })}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex gap-2 justify-end">
+                    <button onClick={() => { setRefineId(null); setRefineState({ step: 'idle' }) }}
+                      className="px-4 py-2 text-sm rounded-lg border border-gray-200 hover:bg-gray-50">
+                      Cancel
+                    </button>
+                    <button
+                      onClick={() => submitAnswers(refineId, refineState.questions, refineState.answers)}
+                      className="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700">
+                      Generate prompt
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {refineState.step === 'done' && (
+                <>
+                  <p className="text-sm text-gray-600">Refined prompt saved:</p>
+                  <blockquote className="bg-gray-50 border-l-4 border-blue-400 pl-3 py-2 text-sm text-gray-700 italic">
+                    {refineState.prompt}
+                  </blockquote>
+                  <div className="flex justify-end">
+                    <button onClick={() => { setRefineId(null); setRefineState({ step: 'idle' }) }}
+                      className="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700">
+                      Done
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+        </>
       )}
 
       {open && (

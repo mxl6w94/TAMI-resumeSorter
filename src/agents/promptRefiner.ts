@@ -11,6 +11,7 @@ import { env } from '@/lib/env'
 function getModel() {
   return new GoogleGenerativeAI(env.GEMINI_API_KEY).getGenerativeModel({
     model: 'gemini-1.5-flash',
+    generationConfig: { responseMimeType: 'application/json' },
   })
 }
 
@@ -49,9 +50,11 @@ Respond with a JSON array:
 `
   const result = await getModel().generateContent(prompt)
   const raw = result.response.text()
-  const jsonMatch = raw.match(/\[[\s\S]*\]/)
-  if (!jsonMatch) throw new Error('Failed to parse clarifying questions.')
-  return JSON.parse(jsonMatch[0]) as ClarificationQuestion[]
+  try {
+    return JSON.parse(raw) as ClarificationQuestion[]
+  } catch {
+    throw new Error('Failed to parse clarifying questions from model response.')
+  }
 }
 
 /**

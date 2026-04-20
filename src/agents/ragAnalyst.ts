@@ -5,6 +5,7 @@
  * calling the LLM (cost/latency guard).
  */
 
+import pLimit from 'p-limit'
 import { createSupabaseServerClient } from '@/lib/supabase'
 import { generateEmbedding } from '@/lib/openai'
 import {
@@ -14,6 +15,8 @@ import {
   MAX_FILE_SIZE_BYTES,
   MAX_FILE_PAGES,
 } from '@/lib/constants'
+
+const embeddingLimit = pLimit(5)
 import type { CriteriaUnit } from '@/types/database'
 import { runInferenceScorer } from './inferenceScorer'
 
@@ -38,7 +41,9 @@ export async function extractTextFromBuffer(
 ): Promise<ParsedResume> {
   if (mimeType === 'application/pdf') {
     const pdfModule = await import('pdf-parse')
-    const pdfParse = pdfModule.default ?? pdfModule
+    // pdf-parse ships both CJS and ESM — resolve whichever export is callable
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const pdfParse = ((pdfModule as any).default ?? pdfModule) as (b: Buffer) => Promise<{ text: string; numpages: number }>
     const result = await pdfParse(buffer)
     if (result.numpages > MAX_FILE_PAGES) {
       throw new Error(`PDF exceeds ${MAX_FILE_PAGES} page limit.`)
@@ -84,12 +89,14 @@ export async function embedAndStoreChunks(
   const supabase = await createSupabaseServerClient()
 
   const rows = await Promise.all(
-    chunks.map(async (chunk, index) => ({
-      resume_id: resumeId,
-      chunk_index: index,
-      chunk_text: chunk,
-      embedding: await generateEmbedding(chunk),
-    }))
+    chunks.map((chunk, index) =>
+      embeddingLimit(async () => ({
+        resume_id: resumeId,
+        chunk_index: index,
+        chunk_text: chunk,
+        embedding: await generateEmbedding(chunk),
+      }))
+    )
   )
 
   const { error } = await supabase
