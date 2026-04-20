@@ -5,7 +5,7 @@ import { refinePrompt } from '@/agents/promptRefiner'
 
 const RefineSchema = z.object({
   rawDescription: z.string().min(1),
-  answers: z.record(z.string()).optional(),
+  answers: z.record(z.string(), z.string()).optional(),
 })
 
 // POST /api/criteria/[id]/refine — prompt refiner clarification layer
@@ -28,7 +28,7 @@ export async function POST(
     .eq('id', criteriaId)
     .single()
 
-  const folder = criterion?.folders as { owner_id: string } | null
+  const folder = criterion?.folders as unknown as { owner_id: string } | null
   if (!criterion || folder?.owner_id !== user.id) {
     return NextResponse.json({ error: 'Criterion not found' }, { status: 404 })
   }

@@ -133,6 +133,7 @@ export default function CriteriaPanel({
       {criteria.length === 0 ? (
         <p className="text-sm text-gray-400">No criteria yet. Add criteria that sum to 100%.</p>
       ) : (
+        <>
         <ul className="space-y-2">
           {criteria.map((c) => (
             <li key={c.id} className="flex items-center gap-3 bg-gray-50 rounded-lg px-3 py-2 text-sm">
@@ -221,6 +222,7 @@ export default function CriteriaPanel({
             </div>
           </div>
         )}
+        </>
       )}
 
       {open && (

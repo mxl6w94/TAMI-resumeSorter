@@ -12,13 +12,14 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
-  const supabase = createSupabaseBrowserClient()
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
     setLoading(true)
 
+    // Create client lazily inside the handler so it is never called during
+    // server-side prerendering (env vars are only available at runtime).
+    const supabase = createSupabaseBrowserClient()
     const { error } = isSignUp
       ? await supabase.auth.signUp({ email, password })
       : await supabase.auth.signInWithPassword({ email, password })

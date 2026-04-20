@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import { redirect, notFound } from 'next/navigation'
 import { createSupabaseServerClient } from '@/lib/supabase'
 import ResumeUpload from '@/components/ResumeUpload'
@@ -64,7 +66,8 @@ export default async function FolderPage({
       <div className="grid lg:grid-cols-2 gap-8">
         {/* Left column */}
         <div className="space-y-8">
-          <ResumeUpload folderId={id} resumes={resumes ?? []} />
+          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+          <ResumeUpload folderId={id} resumes={(resumes ?? []) as any} />
           <CriteriaPanel
             folderId={id}
             criteria={criteria ?? []}
@@ -73,8 +76,9 @@ export default async function FolderPage({
         </div>
 
         {/* Right column */}
+        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
         <ResultsPanel
-          resumes={resumes ?? []}
+          resumes={(resumes ?? []) as any}
           evaluations={evaluations ?? []}
           criteria={criteria ?? []}
         />

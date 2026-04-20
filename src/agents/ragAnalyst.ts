@@ -41,7 +41,9 @@ export async function extractTextFromBuffer(
 ): Promise<ParsedResume> {
   if (mimeType === 'application/pdf') {
     const pdfModule = await import('pdf-parse')
-    const pdfParse = pdfModule.default ?? pdfModule
+    // pdf-parse ships both CJS and ESM — resolve whichever export is callable
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const pdfParse = ((pdfModule as any).default ?? pdfModule) as (b: Buffer) => Promise<{ text: string; numpages: number }>
     const result = await pdfParse(buffer)
     if (result.numpages > MAX_FILE_PAGES) {
       throw new Error(`PDF exceeds ${MAX_FILE_PAGES} page limit.`)
