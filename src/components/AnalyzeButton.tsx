@@ -16,14 +16,21 @@ export default function AnalyzeButton({
   const [message, setMessage] = useState<string | null>(null)
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  // Auto-refresh every 3s while polling; stop after 60s
+  const [timedOut, setTimedOut] = useState(false)
+
+  // Auto-refresh every 3s while polling; stop after 5 min (100 ticks)
   useEffect(() => {
     if (!polling) return
     let ticks = 0
     pollRef.current = setInterval(() => {
       ticks++
       router.refresh()
-      if (ticks >= 20) stopPolling('Results may be ready — check below.')
+      if (ticks >= 100) {
+        setPolling(false)
+        clearInterval(pollRef.current!)
+        setTimedOut(true)
+        setMessage('Analysis is taking longer than expected.')
+      }
     }, 3000)
     return () => clearInterval(pollRef.current!)
   }, [polling, router])
@@ -68,6 +75,14 @@ export default function AnalyzeButton({
       </button>
       {message && (
         <p className="mt-1 text-xs text-gray-500">{message}</p>
+      )}
+      {timedOut && (
+        <button
+          onClick={() => { setTimedOut(false); setMessage(null); router.refresh() }}
+          className="mt-1 text-xs text-blue-600 hover:underline"
+        >
+          Refresh results
+        </button>
       )}
     </div>
   )

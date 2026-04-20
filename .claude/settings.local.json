@@ -5,7 +5,9 @@
       "Bash(git merge *)",
       "Bash(git checkout *)",
       "Bash(git add *)",
-      "Bash(git commit *)"
+      "Bash(git commit *)",
+      "Bash(npm install *)",
+      "Bash(npx vitest *)"
     ]
   }
 }

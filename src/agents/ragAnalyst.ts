@@ -5,6 +5,7 @@
  * calling the LLM (cost/latency guard).
  */
 
+import pLimit from 'p-limit'
 import { createSupabaseServerClient } from '@/lib/supabase'
 import { generateEmbedding } from '@/lib/openai'
 import {
@@ -14,6 +15,8 @@ import {
   MAX_FILE_SIZE_BYTES,
   MAX_FILE_PAGES,
 } from '@/lib/constants'
+
+const embeddingLimit = pLimit(5)
 import type { CriteriaUnit } from '@/types/database'
 import { runInferenceScorer } from './inferenceScorer'
 
@@ -84,12 +87,14 @@ export async function embedAndStoreChunks(
   const supabase = await createSupabaseServerClient()
 
   const rows = await Promise.all(
-    chunks.map(async (chunk, index) => ({
-      resume_id: resumeId,
-      chunk_index: index,
-      chunk_text: chunk,
-      embedding: await generateEmbedding(chunk),
-    }))
+    chunks.map((chunk, index) =>
+      embeddingLimit(async () => ({
+        resume_id: resumeId,
+        chunk_index: index,
+        chunk_text: chunk,
+        embedding: await generateEmbedding(chunk),
+      }))
+    )
   )
 
   const { error } = await supabase

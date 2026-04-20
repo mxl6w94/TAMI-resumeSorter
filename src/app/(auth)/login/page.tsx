@@ -25,7 +25,8 @@ export default function LoginPage() {
 
     setLoading(false)
     if (error) {
-      setError(error.message)
+      // Generic message prevents account enumeration (don't reveal if email exists)
+      setError(isSignUp ? 'Could not create account. Please try again.' : 'Email or password incorrect.')
     } else {
       router.push('/dashboard')
       router.refresh()
