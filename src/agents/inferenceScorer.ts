@@ -6,6 +6,7 @@
 
 import { createSupabaseServerClient } from '@/lib/supabase'
 import { scoreWithGemini } from '@/lib/gemini'
+import { logger } from '@/lib/logger'
 import type { CriteriaUnit } from '@/types/database'
 
 export interface InferenceScorerInput {
@@ -21,13 +22,28 @@ export async function runInferenceScorer(
   const { folder_id, resume_id, criterion, chunks } = input
   const supabase = await createSupabaseServerClient()
 
-  const result = await scoreWithGemini(
-    criterion.name,
-    criterion.prompt ?? criterion.name,
-    chunks
-  )
+  let result
+  try {
+    result = await scoreWithGemini(
+      criterion.name,
+      criterion.prompt ?? criterion.name,
+      chunks
+    )
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err)
+    logger.error('inferenceScorer: scoreWithGemini failed', {
+      folderId: folder_id,
+      resumeId: resume_id,
+      criteria_unit_id: criterion.id,
+      error: message,
+    })
+    await supabase
+      .from('evaluations')
+      .update({ status: 'failed', error_message: `Scoring failed: ${message}` })
+      .match({ folder_id, resume_id, criteria_unit_id: criterion.id })
+    return
+  }
 
-  // Apply the criterion weight to produce a weighted contribution score
   const weightedScore = (result.score / 100) * criterion.weight
 
   await supabase

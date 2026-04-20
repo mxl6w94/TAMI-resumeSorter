@@ -12,20 +12,22 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
-  const supabase = createSupabaseBrowserClient()
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
     setLoading(true)
 
+    // Create client lazily inside the handler so it is never called during
+    // server-side prerendering (env vars are only available at runtime).
+    const supabase = createSupabaseBrowserClient()
     const { error } = isSignUp
       ? await supabase.auth.signUp({ email, password })
       : await supabase.auth.signInWithPassword({ email, password })
 
     setLoading(false)
     if (error) {
-      setError(error.message)
+      // Generic message prevents account enumeration (don't reveal if email exists)
+      setError(isSignUp ? 'Could not create account. Please try again.' : 'Email or password incorrect.')
     } else {
       router.push('/dashboard')
       router.refresh()

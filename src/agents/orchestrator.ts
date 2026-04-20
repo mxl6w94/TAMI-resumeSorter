@@ -6,6 +6,7 @@
 
 import { createSupabaseServerClient } from '@/lib/supabase'
 import { CRITERIA_WEIGHT_TOTAL } from '@/lib/constants'
+import { logger } from '@/lib/logger'
 import type { CriteriaUnit, AnalysisRequest } from '@/types/database'
 import { runRAGAnalyst } from './ragAnalyst'
 
@@ -60,11 +61,18 @@ export async function runAnalysis(request: AnalysisRequest): Promise<void> {
   }
 
   // 3. Dispatch RAG Analyst for each resume × criterion
-  await Promise.all(
+  // Promise.allSettled ensures one failure doesn't abort the remaining tasks;
+  // each runRAGAnalyst writes its own failed status to the DB on error.
+  const results = await Promise.allSettled(
     resume_ids.flatMap((resume_id) =>
       criteria.map((criterion) =>
         runRAGAnalyst({ folder_id, resume_id, criterion })
       )
     )
   )
+
+  const failures = results.filter((r) => r.status === 'rejected')
+  if (failures.length > 0) {
+    logger.error('orchestrator: tasks rejected', { folderId: folder_id, failureCount: failures.length } as Record<string, unknown>)
+  }
 }

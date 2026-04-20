@@ -25,7 +25,9 @@ export default function ResultsPanel({
   evaluations: EvaluationRow[]
   criteria: CriteriaUnit[]
 }) {
+  const PAGE_SIZE = 25
   const [selected, setSelected] = useState<string | null>(null)
+  const [page, setPage] = useState(0)
 
   // Roll up total score per resume
   const scored = resumes
@@ -56,11 +58,16 @@ export default function ResultsPanel({
     )
   }
 
+  const totalPages = Math.ceil(scored.length / PAGE_SIZE)
+  const paginated = scored.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
+
   return (
     <section>
-      <h2 className="text-base font-semibold text-gray-900 mb-3">Results</h2>
+      <h2 className="text-base font-semibold text-gray-900 mb-3">
+        Results <span className="text-sm font-normal text-gray-400">({scored.length})</span>
+      </h2>
       <ul className="space-y-2">
-        {scored.map(({ resume, total, evs }) => {
+        {paginated.map(({ resume, total, evs }) => {
           const hasResults = evs.length > 0
           return (
             <li key={resume.id}>
@@ -111,6 +118,26 @@ export default function ResultsPanel({
           )
         })}
       </ul>
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between mt-4 text-sm text-gray-500">
+          <button
+            onClick={() => setPage((p) => Math.max(0, p - 1))}
+            disabled={page === 0}
+            className="px-3 py-1 rounded border border-gray-200 hover:bg-gray-50 disabled:opacity-40"
+          >
+            Previous
+          </button>
+          <span>Page {page + 1} of {totalPages}</span>
+          <button
+            onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+            disabled={page === totalPages - 1}
+            className="px-3 py-1 rounded border border-gray-200 hover:bg-gray-50 disabled:opacity-40"
+          >
+            Next
+          </button>
+        </div>
+      )}
     </section>
   )
 }

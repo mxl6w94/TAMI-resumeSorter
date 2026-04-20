@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabase'
 import { extractTextFromBuffer, validateFileSize, chunkText, embedAndStoreChunks } from '@/agents/ragAnalyst'
 import { MAX_FILE_SIZE_BYTES } from '@/lib/constants'
+import { logger } from '@/lib/logger'
 import crypto from 'crypto'
 
 // POST /api/folders/[id]/resumes — upload and attach a resume to a folder
@@ -76,22 +77,13 @@ export async function POST(
       return NextResponse.json({ error: (e as Error).message }, { status: 400 })
     }
 
-    // Upload to Supabase Storage
-    // Path is relative to bucket root — user.id is [1] for RLS foldername check
+    // Build the storage path (used in URL and for RLS foldername check)
     const storagePath = `${user.id}/${fileHash}/${file.name}`
-    const { error: uploadError } = await supabase.storage
-      .from('resumes')
-      .upload(storagePath, buffer, { contentType: file.type, upsert: false })
-
-    if (uploadError) {
-      return NextResponse.json({ error: uploadError.message }, { status: 500 })
-    }
-
     const { data: { publicUrl } } = supabase.storage
       .from('resumes')
       .getPublicUrl(storagePath)
 
-    // Insert resume record
+    // Insert DB record first — prevents orphaned Storage files on insert failure
     const { data: resume, error: insertError } = await supabase
       .from('resumes')
       .insert({
@@ -107,14 +99,30 @@ export async function POST(
       .single()
 
     if (insertError) {
-      return NextResponse.json({ error: insertError.message }, { status: 500 })
+      return NextResponse.json({ error: 'Failed to save resume record.' }, { status: 500 })
     }
 
     resumeId = resume.id
 
-    // Embed chunks in background (non-blocking)
+    // Upload file to Storage after DB record exists
+    const { error: uploadError } = await supabase.storage
+      .from('resumes')
+      .upload(storagePath, buffer, { contentType: file.type, upsert: false })
+
+    if (uploadError) {
+      // DB record exists but file upload failed — clean up to keep state consistent
+      await supabase.from('resumes').delete().eq('id', resumeId)
+      return NextResponse.json({ error: 'File upload failed. Please try again.' }, { status: 500 })
+    }
+
+    // Embed chunks in background — runRAGAnalyst re-embeds on demand if this fails
     const chunks = chunkText(parsed.text)
-    embedAndStoreChunks(resumeId, chunks).catch(console.error)
+    embedAndStoreChunks(resumeId, chunks).catch((err: unknown) => {
+      logger.error('resumes: background embedding failed', {
+        resumeId,
+        error: err instanceof Error ? err.message : String(err),
+      })
+    })
   }
 
   // Link resume to folder
